@@ -36,3 +36,54 @@
       transform: rotate(360deg);
     }
   }
+
+
+
+
+
+
+
+
+
+  @media (max-width: 1024px) {
+    .dashboard {
+        flex-direction: column;
+    }
+
+    .left-section,
+    .middle-section,
+    .right-section {
+        width: 100%;
+        height: auto;
+    }
+
+    .left-section,
+    .right-section {
+        order: 1;
+        height: 50vh;
+    }
+
+    .middle-section {
+        order: 2;
+        height: auto;
+        flex-grow: 1;
+    }
+}
+
+@media (min-width: 1025px) {
+    .dashboard {
+        display: flex;
+    }
+
+    .left-section {
+        width: 25%;
+    }
+
+    .middle-section {
+        width: 50%;
+    }
+
+    .right-section {
+        width: 25%;
+    }
+}
