@@ -4,9 +4,11 @@ const jwt =require('jsonwebtoken');
 const cors=require('cors');
 const io = require('socket.io')(8080, {
     cors: {
-       origin:process.env.CLIENT_URI || 'http://localhost:3000',
+        origin: process.env.CLIENT_URI || 'http://localhost:3000',
     }
 });
+
+
 
 require('./DB/connection');
 
