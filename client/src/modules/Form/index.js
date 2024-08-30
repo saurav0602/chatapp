@@ -77,6 +77,7 @@ const Form = ({ isSignInPage = true }) => {
                     >
                         {isSignInPage ? 'Sign up' : 'Sign in'}
                     </span>
+                    
                 </div>
             </div>
         </div>
