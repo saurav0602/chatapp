@@ -1,127 +1,100 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react'
 import Input from '../../components/input';
 import Avatar from '../../assets/avatar.png';
-import { io } from 'socket.io-client';
+import { io } from 'socket.io-client'
 
 const Dashboard = () => {
-    const [user] = useState(JSON.parse(localStorage.getItem('user:detail')));
-    const [conversations, setConversations] = useState([]);
-    const [messages, setMessages] = useState({});
-    const [message, setMessage] = useState('');
-    const [users, setUsers] = useState([]);
-    const [socket, setSocket] = useState(null);
-    const messageRef = useRef(null);
+	const [user] = useState(JSON.parse(localStorage.getItem('user:detail')))
+	const [conversations, setConversations] = useState([])
+	const [messages, setMessages] = useState({})
+	const [message, setMessage] = useState('')
+	const [users, setUsers] = useState([])
+	const [socket, setSocket] = useState(null)
+	const messageRef = useRef(null)
 
-    useEffect(() => {
-        const socket = io('http://localhost:8080');
-        setSocket(socket);
+	useEffect(() => {
+		setSocket(io('http://localhost:8080'))
+	}, [])
 
-        socket.on('getUsers', (users) => {
-            console.log('activeUsers :>> ', users);
-        });
+	useEffect(() => {
+		socket?.emit('addUser', user?.id);
+		socket?.on('getUsers', users => {
+			console.log('activeUsers :>> ', users);
+		})
+		socket?.on('getMessage', data => {
+			setMessages(prev => ({
+				...prev,
+				messages: [...prev.messages, { user: data.user, message: data.message }]
+			}))
+		})
+	}, [socket, user?.id])
 
-        socket.on('getMessage', (data) => {
-            setMessages((prev) => ({
-                ...prev,
-                messages: [...prev.messages, { user: data.user, message: data.message }]
-            }));
-        });
+	useEffect(() => {
+		messageRef?.current?.scrollIntoView({ behavior: 'smooth' })
+	}, [messages?.messages])
 
-        return () => {
-            socket.disconnect();
-        };
-    }, [user?.id]);
+	useEffect(() => {
+		const loggedInUser = JSON.parse(localStorage.getItem('user:detail'))
+		const fetchConversations = async () => {
+			const res = await fetch(`http://localhost:8000/api/conversations/${loggedInUser?.id}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				}
+			});
+			const resData = await res.json()
+			setConversations(resData)
+		}
+		fetchConversations()
+	}, [])
 
-    useEffect(() => {
-        socket?.emit('addUser', user?.id);
-    }, [socket, user?.id]);
+	useEffect(() => {
+		const fetchUsers = async () => {
+			const res = await fetch(`http://localhost:8000/api/users/${user?.id}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				}
+			});
+			const resData = await res.json()
+			setUsers(resData)
+		}
+		fetchUsers()
+	},  [user?.id])
 
-    useEffect(() => {
-        messageRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages?.messages]);
+	const fetchMessages = async (conversationId, receiver) => {
+		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		const resData = await res.json()
+		setMessages({ messages: resData, receiver, conversationId })
+	}
 
-    useEffect(() => {
-        const fetchConversations = async () => {
-            try {
-                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversations/${user?.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!res.ok) throw new Error('Failed to fetch conversations');
-                const resData = await res.json();
-                setConversations(resData);
-            } catch (error) {
-                console.error('Error fetching conversations:', error);
-            }
-        };
-        fetchConversations();
-    }, [user?.id]);
+	const sendMessage = async (e) => {
+		setMessage('')
+		socket?.emit('sendMessage', {
+			senderId: user?.id,
+			receiverId: messages?.receiver?.receiverId,
+			message,
+			conversationId: messages?.conversationId
+		});
+		 await fetch(`http://localhost:8000/api/message`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				conversationId: messages?.conversationId,
+				senderId: user?.id,
+				message,
+				receiverId: messages?.receiver?.receiverId
+			})
+		});
+	}
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user?.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!res.ok) throw new Error('Failed to fetch users');
-                const resData = await res.json();
-                setUsers(resData);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
-        };
-        fetchUsers();
-    }, [user?.id]);
-
-    const fetchMessages = async (conversationId, receiver) => {
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            if (!res.ok) throw new Error('Failed to fetch messages');
-            const resData = await res.json();
-            setMessages({ messages: resData, receiver, conversationId });
-        } catch (error) {
-            console.error('Error fetching messages:', error);
-        }
-    };
-
-    const sendMessage = async (e) => {
-        e.preventDefault();
-        if (!message.trim()) return; // Prevent sending empty messages
-
-        try {
-            await fetch(`${process.env.REACT_APP_API_URL}/api/message`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    conversationId: messages?.conversationId,
-                    senderId: user?.id,
-                    message,
-                    receiverId: messages?.receiver?.receiverId
-                })
-            });
-            socket?.emit('sendMessage', {
-                senderId: user?.id,
-                receiverId: messages?.receiver?.receiverId,
-                message,
-                conversationId: messages?.conversationId
-            });
-            setMessage('');
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
-    };
 
     return (
         <div className="w-screen flex flex-col lg:flex-row">
