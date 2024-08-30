@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.CLIENT_URI,
+        origin: process.env.CLIENT_URI || 'http://localhost:3002',
     }
 });
 
