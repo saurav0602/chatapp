@@ -13,88 +13,114 @@ const Dashboard = () => {
     const messageRef = useRef(null);
 
     useEffect(() => {
-        setSocket(io(`${process.env.REACT_APP_SOCKET_URL}`));
-    }, [user?.id]);
+        const socket = io(`${process.env.REACT_APP_SOCKET_URL}`);
+        setSocket(socket);
 
-    useEffect(() => {
-        socket?.emit('addUser', user?.id);
-        socket?.on('getUsers', (users) => {
+        socket.on('getUsers', (users) => {
             console.log('activeUsers :>> ', users);
         });
-        socket?.on('getMessage', (data) => {
+
+        socket.on('getMessage', (data) => {
             setMessages((prev) => ({
                 ...prev,
                 messages: [...prev.messages, { user: data.user, message: data.message }]
             }));
         });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [user?.id]);
+
+    useEffect(() => {
+        socket?.emit('addUser', user?.id);
     }, [socket, user?.id]);
 
     useEffect(() => {
-        messageRef?.current?.scrollIntoView({ behavior: 'smooth' });
+        messageRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages?.messages]);
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversations/${user?.id}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            const resData = await res.json();
-            setConversations(resData);
+            try {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversations/${user?.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!res.ok) throw new Error('Failed to fetch conversations');
+                const resData = await res.json();
+                setConversations(resData);
+            } catch (error) {
+                console.error('Error fetching conversations:', error);
+            }
         };
         fetchConversations();
     }, [user?.id]);
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user?.id}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            const resData = await res.json();
-            setUsers(resData);
+            try {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user?.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!res.ok) throw new Error('Failed to fetch users');
+                const resData = await res.json();
+                setUsers(resData);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
         };
         fetchUsers();
     }, [user?.id]);
 
     const fetchMessages = async (conversationId, receiver) => {
-        const res = await fetch(
-            `${process.env.REACT_APP_API_URL}/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`,
-            {
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
-            }
-        );
-        const resData = await res.json();
-        setMessages({ messages: resData, receiver, conversationId });
+            });
+            if (!res.ok) throw new Error('Failed to fetch messages');
+            const resData = await res.json();
+            setMessages({ messages: resData, receiver, conversationId });
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+        }
     };
 
     const sendMessage = async (e) => {
-        setMessage('');
-        socket?.emit('sendMessage', {
-            senderId: user?.id,
-            receiverId: messages?.receiver?.receiverId,
-            message,
-            conversationId: messages?.conversationId
-        });
-        await fetch(`${process.env.REACT_APP_API_URL}/api/message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                conversationId: messages?.conversationId,
+        e.preventDefault();
+        if (!message.trim()) return; // Prevent sending empty messages
+
+        try {
+            await fetch(`${process.env.REACT_APP_API_URL}/api/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    conversationId: messages?.conversationId,
+                    senderId: user?.id,
+                    message,
+                    receiverId: messages?.receiver?.receiverId
+                })
+            });
+            socket?.emit('sendMessage', {
                 senderId: user?.id,
+                receiverId: messages?.receiver?.receiverId,
                 message,
-                receiverId: messages?.receiver?.receiverId
-            })
-        });
+                conversationId: messages?.conversationId
+            });
+            setMessage('');
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
     };
 
     return (
@@ -229,7 +255,7 @@ const Dashboard = () => {
                             className={`ml-2 lg:ml-4 p-2 cursor-pointer bg-light rounded-full ${
                                 !message && 'pointer-events-none'
                             }`}
-                            onClick={() => sendMessage()}
+                            onClick={sendMessage}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
