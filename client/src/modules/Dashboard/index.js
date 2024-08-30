@@ -13,7 +13,7 @@ const Dashboard = () => {
     const messageRef = useRef(null);
 
     useEffect(() => {
-        setSocket(io('${process.env.REACT_APP_SOCKET_URL}'));
+        setSocket(io(`${process.env.REACT_APP_SOCKET_URL}`));
     }, [user?.id]);
 
     useEffect(() => {
@@ -27,16 +27,15 @@ const Dashboard = () => {
                 messages: [...prev.messages, { user: data.user, message: data.message }]
             }));
         });
-    }, [socket]);
+    }, [socket, user?.id]);
 
     useEffect(() => {
         messageRef?.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages?.messages]);
 
     useEffect(() => {
-        const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
         const fetchConversations = async () => {
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversations/${loggedInUser?.id}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversations/${user?.id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -46,7 +45,7 @@ const Dashboard = () => {
             setConversations(resData);
         };
         fetchConversations();
-    }, []);
+    }, [user?.id]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -60,7 +59,7 @@ const Dashboard = () => {
             setUsers(resData);
         };
         fetchUsers();
-    }, []);
+    }, [user?.id]);
 
     const fetchMessages = async (conversationId, receiver) => {
         const res = await fetch(
@@ -109,6 +108,7 @@ const Dashboard = () => {
                             width={75}
                             height={75}
                             className="border border-primary p-[2px] rounded-full"
+                            alt="User Avatar"
                         />
                     </div>
                     <div className="ml-4 lg:ml-8">
@@ -134,6 +134,7 @@ const Dashboard = () => {
                                             <img
                                                 src={Avatar}
                                                 className="w-[50px] h-[50px] lg:w-[60px] lg:h-[60px] rounded-full p-[2px] border border-primary"
+                                                alt="User Avatar"
                                             />
                                         </div>
                                         <div className="ml-4 lg:ml-6">
@@ -161,7 +162,7 @@ const Dashboard = () => {
                 {messages?.receiver?.fullName && (
                     <div className="w-[90%] lg:w-[75%] bg-secondary h-[80px] my-4 lg:my-14 rounded-full flex items-center px-6 lg:px-14 py-2">
                         <div className="cursor-pointer">
-                            <img src={Avatar} width={50} height={50} className="rounded-full" />
+                            <img src={Avatar} width={50} height={50} className="rounded-full" alt="Receiver Avatar" />
                         </div>
                         <div className="ml-4 lg:ml-6 mr-auto">
                             <h3 className="text-md lg:text-lg">{messages?.receiver?.fullName}</h3>
@@ -292,6 +293,7 @@ const Dashboard = () => {
                                         <img
                                             src={Avatar}
                                             className="w-[50px] h-[50px] lg:w-[60px] lg:h-[60px] rounded-full p-[2px] border border-primary"
+                                            alt="User Avatar"
                                         />
                                     </div>
                                     <div className="ml-4 lg:ml-6">

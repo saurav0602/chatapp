@@ -19,7 +19,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm install --omit=dev",
-  "deploy": "npm run build && deploy"
+    "deploy": "npm run build",
+    "lint": "eslint ."
   },
   "eslintConfig": {
     "extends": [
@@ -27,12 +28,10 @@
       "react-app/jest"
     ],
     "rules": {
-  "no-unused-vars": "warn",
-  "react-hooks/exhaustive-deps": "warn",
-  "jsx-a11y/alt-text": "warn"
+      "no-unused-vars": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "jsx-a11y/alt-text": "warn"
     }
-
-
   },
   "browserslist": {
     "production": [
