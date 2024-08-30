@@ -3,13 +3,14 @@ const express = require('express');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const io = require('socket.io')(process.env.SOCKET_PORT || 8080, {
+const io = require('socket.io')( 8080, {
     cors: {
         origin: process.env.CLIENT_URI || 'http://localhost:3002',
     }
 });
 
 // Connect DB
+
 require('./DB/connection');
 
 // Import Files
