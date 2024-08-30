@@ -52,7 +52,7 @@ const Form = ({ isSignInPage = true }) => {
                 <form className="flex flex-col items-center w-full" onSubmit={handleSubmit}>
                     {!isSignInPage && (
                         <Input
-                            label="Full name"
+                            label htmlFor="Full name"
                             name="fullName"
                             placeholder="Enter your full name"
                             className="mb-4 md:mb-6 w-full md:w-[75%]"
