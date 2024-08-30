@@ -10,7 +10,7 @@ const io = require('socket.io')(process.env.SOCKET_PORT || 8080, {
 });
 
 // Connect DB
-require('./db/connection');
+require('./DB/connection');
 
 // Import Files
 const Users = require('./models/Users');
